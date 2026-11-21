@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rust From Zero · course viewer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23f74c00'/><text x='32' y='43' font-family='monospace' font-size='28' font-weight='bold' fill='white' text-anchor='middle'>Rs</text></svg>">
+<link rel="stylesheet" href="/vendor/hljs-github-dark.css">
+<link rel="stylesheet" href="/vendor/xterm.css">
+<style>
+/* ============ tokens ============ */
+:root {
+  --bg:        #0a0c11;
+  --bg-panel:  #0e1118;
+  --bg-elev:   #141924;
+  --bg-hover:  #1a2130;
+  --border:    #1e2634;
+  --border-lt: #2a3548;
+  --text:      #e4e9f1;
+  --text-dim:  #97a3b4;
+  --text-mute: #5f6b7d;
+  --accent:    #ff7a3c;
+  --accent-2:  #ffb86b;
+  --accent-deep:#f74c00;
+  --grad:      linear-gradient(120deg, #ffb86b 0%, #ff7a3c 45%, #f74c00 100%);
+  --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
+  --ui: -apple-system, "Segoe UI", system-ui, "Noto Sans SC", "Microsoft YaHei", Roboto, sans-serif;
+  --rad: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--ui);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  overflow: hidden;
+  font-size: 15px;
+}
+::selection { background: rgba(255, 122, 60, .28); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #232c3c; border-radius: 6px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #33405a; }
+button { font-family: inherit; cursor: pointer; }
+kbd {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  background: var(--bg-elev); border: 1px solid var(--border-lt);
+  border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px;
+}
+svg.ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ============ sidebar ============ */
+#sidebar {
+  width: 292px; flex: none; height: 100vh;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: margin-left .22s ease;
+}
+body.side-hidden #sidebar { margin-left: -292px; }
+.side-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 16px 12px;
+}
+.logo {
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  background: var(--grad);
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 700; font-size: 14px; color: #fff;
+  box-shadow: 0 2px 14px rgba(247, 76, 0, .35);
+}
+.brand { line-height: 1.25; min-width: 0; }
+.brand b { font-size: 14px; letter-spacing: .2px; display: block; }
+.brand span { font-size: 11px; color: var(--text-mute); font-family: var(--mono); }
+.side-head .spacer { flex: 1; }
+.icon-btn {
+  background: none; border: none; color: var(--text-mute);
+  width: 28px; height: 28px; border-radius: 7px;
+  display: grid; place-items: center;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+.search { padding: 4px 12px 10px; position: relative; }
+.search input {
+  width: 100%; background: var(--bg-elev);
+  border: 1px solid var(--border); border-radius: 9px;
+  color: var(--text); font-size: 13px; font-family: inherit;
+  padding: 8px 30px 8px 32px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search input:focus { border-color: var(--accent-deep); box-shadow: 0 0 0 3px rgba(247, 76, 0, .15); }
+.search input::placeholder { color: var(--text-mute); }
+.search .mag { position: absolute; left: 22px; top: 50%; transform: translateY(-58%); color: var(--text-mute); pointer-events: none; }
+.search kbd { position: absolute; right: 20px; top: 50%; transform: translateY(-62%); }
+
+#tree { flex: 1; overflow-y: auto; padding: 2px 8px 12px; }
+.grp { margin-bottom: 2px; }
+.grp > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 8px; border-radius: 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase;
+  color: var(--text-mute);
+}
+.grp > summary:hover { color: var(--text-dim); background: var(--bg-hover); }
+.grp > summary::-webkit-details-marker { display: none; }
+.grp > summary .chev { transition: transform .15s; width: 12px; height: 12px; }
+.grp:not([open]) > summary .chev { transform: rotate(-90deg); }
+.grp > summary .cnt { margin-left: auto; font-family: var(--mono); font-weight: 400; font-size: 10px; background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 7px; border-radius: 20px; }
+
+.file {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 7px 9px 7px 12px; margin: 1px 0;
+  border-radius: 9px; cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background .12s;
+}
+.file:hover { background: var(--bg-hover); }
+.file.active { background: rgba(255, 122, 60, .1); border-left-color: var(--accent); }
+.file .num {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  color: var(--accent-2); background: rgba(255, 184, 107, .1);
+  border: 1px solid rgba(255, 184, 107, .22);
+  border-radius: 6px; padding: 2px 5px; margin-top: 1px; flex: none;
+}
+.file .fic { color: var(--text-mute); margin-top: 2px; flex: none; }
+.file.active .fic { color: var(--accent); }
+.file .ftxt { min-width: 0; flex: 1; }
+.file .fname {
+  display: block; font-size: 13.5px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file .fsub {
+  display: block; font-size: 11px; color: var(--text-mute);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;
+}
+#tree .empty { color: var(--text-mute); font-size: 12.5px; text-align: center; padding: 26px 10px; }
+
+.side-foot {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--text-mute); font-family: var(--mono);
+}
+.side-foot .dot { width: 7px; height: 7px; border-radius: 50%; background: #3fb950; box-shadow: 0 0 8px #3fb95088; flex: none; }
+.side-foot .spacer { flex: 1; }
+#rescan { background: none; border: 1px solid var(--border); color: var(--text-dim); border-radius: 7px; padding: 4px 9px; font-size: 11px; font-family: var(--mono); display: flex; align-items: center; gap: 5px; }
+#rescan:hover { border-color: var(--accent-deep); color: var(--accent-2); }
+#rescan svg { width: 12px; height: 12px; }
+
+/* ============ main ============ */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+
+#topbar {
+  flex: none; display: flex; align-items: stretch; gap: 4px;
+  height: 47px; padding: 0 10px 0 6px;
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+}
+.tb-btn {
+  align-self: center; flex: none;
+  width: 30px; height: 30px; border-radius: 8px;
+  background: none; border: none; color: var(--text-mute);
+  display: grid; place-items: center;
+}
+.tb-btn:hover { background: var(--bg-hover); color: var(--text); }
+.tb-btn.off { color: var(--accent-2); }
+.tb-brand {
+  display: none; align-self: center; flex: none; user-select: none;
+  font-family: var(--mono); font-size: 12px; color: var(--text-mute); padding: 0 4px;
+}
+body.side-hidden .tb-brand { display: block; }
+
+#tabbar {
+  flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: 3px;
+  padding: 8px 2px 0; overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px 9px 13px; max-width: 230px; min-width: 0;
+  font-size: 12.5px; color: var(--text-dim);
+  background: transparent; border: 1px solid transparent; border-bottom: none;
+  border-radius: 9px 9px 0 0; cursor: pointer; user-select: none;
+  position: relative; flex: none;
+}
+.tab:hover { background: var(--bg-hover); }
+.tab.active { background: var(--bg); color: var(--text); border-color: var(--border); }
+.tab.active::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px;
+  background: var(--grad); border-radius: 2px;
+}
+.tab .tlabel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab .tx {
+  border: none; background: none; color: var(--text-mute);
+  width: 18px; height: 18px; border-radius: 5px; font-size: 13px; line-height: 1;
+  display: grid; place-items: center; flex: none; opacity: 0;
+}
+.tab:hover .tx, .tab.active .tx { opacity: 1; }
+.tab .tx:hover { background: var(--border-lt); color: var(--text); }
+
+#content { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+
+/* ============ agent terminal ============ */
+#agentPanel {
+  width: clamp(360px, 42vw, 720px); min-width: 300px; height: 100vh; flex: none;
+  display: flex; flex-direction: column; background: #090b10;
+  border-left: 1px solid var(--border); transition: width .2s ease, margin-right .2s ease;
+}
+body.agent-hidden #agentPanel { width: 0; min-width: 0; overflow: hidden; }
+.agent-head {
+  height: 47px; flex: none; display: flex; align-items: center; gap: 9px;
+  padding: 0 10px 0 14px; border-bottom: 1px solid var(--border); background: var(--bg-panel);
+}
+.agent-select {
+  max-width: 112px; height: 28px; padding: 0 24px 0 7px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg-elev); color: var(--text); font: 12px var(--mono);
+  outline: none; cursor: pointer;
+}
+.agent-select:focus { border-color: var(--accent-deep); }
+.agent-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-mute); }
+.agent-status .dot { width: 7px; height: 7px; border-radius: 50%; background: #d29922; }
+.agent-status.live .dot { background: #3fb950; box-shadow: 0 0 7px #3fb95088; }
+.agent-status.dead .dot { background: #f85149; }
+.agent-spacer { flex: 1; }
+.agent-action {
+  width: 30px; height: 30px; display: grid; place-items: center;
+  border: none; border-radius: 7px; background: transparent; color: var(--text-mute);
+}
+.agent-action:hover { color: var(--text); background: var(--bg-hover); }
+#terminal { flex: 1; min-height: 0; padding: 10px 8px 8px 12px; overflow: hidden; }
+#terminal .xterm { height: 100%; }
+#terminal .xterm-viewport { scrollbar-color: #33405a transparent; }
+#docwrap { max-width: 900px; margin: 0 auto; padding: 34px 52px 90px; animation: fade .18s ease; zoom: var(--reader-zoom, 1); }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+#dochead {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 26px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 12px; color: var(--text-mute);
+}
+#dochead .crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; }
+#dochead .crumbs b { color: var(--accent-2); font-weight: 500; }
+#dochead .meta { margin-left: auto; display: flex; gap: 14px; flex: none; }
+
+/* ============ welcome hero ============ */
+#welcome { height: 100%; display: grid; place-items: center; padding: 40px 24px; }
+.hero { text-align: center; max-width: 620px; animation: fade .25s ease; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--accent-2);
+  border: 1px solid rgba(255, 184, 107, .3); background: rgba(255, 184, 107, .07);
+  padding: 5px 13px; border-radius: 30px; margin-bottom: 26px;
+}
+.hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb950; box-shadow: 0 0 8px #3fb950; }
+.hero h1 { font-size: 54px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
+.hero h1 .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-sub { color: var(--text-dim); margin: 16px auto 30px; line-height: 1.7; max-width: 480px; }
+.hero-stats { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 34px; }
+.stat {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--rad);
+  padding: 14px 22px; min-width: 104px; cursor: pointer; transition: border-color .15s, transform .15s;
+}
+.stat:hover { border-color: var(--accent-deep); transform: translateY(-2px); }
+.stat b { display: block; font-size: 24px; font-family: var(--mono); color: var(--accent-2); }
+.stat span { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; }
+.hero-hints { display: flex; gap: 22px; justify-content: center; color: var(--text-mute); font-size: 12.5px; }
+
+/* ============ markdown body ============ */
+.md { line-height: 1.8; font-size: 15.5px; overflow-wrap: break-word; }
+.md > *:first-child { margin-top: 0; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
+  line-height: 1.35; font-weight: 700; letter-spacing: -.2px;
+  margin: 1.9em 0 .7em; scroll-margin-top: 20px; position: relative;
+}
+.md h1 { font-size: 2em; padding-bottom: .35em; border-bottom: 1px solid var(--border); margin-top: 0; }
+.md h1::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 90px; height: 2px; background: var(--grad); }
+.md h2 { font-size: 1.5em; padding-bottom: .25em; border-bottom: 1px solid var(--border); }
+.md h3 { font-size: 1.22em; }
+.md h4 { font-size: 1.05em; }
+.md h1:hover::before, .md h2:hover::before, .md h3:hover::before,
+.md h4:hover::before, .md h5:hover::before, .md h6:hover::before {
+  content: "§"; position: absolute; left: -.95em; color: var(--accent); opacity: .7; font-weight: 400;
+}
+.md p { margin: .85em 0; }
+.md a { color: var(--accent-2); text-decoration: none; border-bottom: 1px solid rgba(255, 184, 107, .35); }
+.md a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.md strong { color: #fff; font-weight: 650; }
+.md ul, .md ol { margin: .85em 0; padding-left: 1.7em; }
+.md li { margin: .3em 0; }
+.md li::marker { color: var(--accent); }
+.md blockquote {
+  margin: 1.1em 0; padding: 2px 18px;
+  border-left: 3px solid var(--accent-deep);
+  background: rgba(255, 122, 60, .06);
+  border-radius: 0 9px 9px 0; color: var(--text-dim);
+}
+/* <details> 折叠块（课件里的“查看解析”） */
+.md details {
+  margin: 1.1em 0; padding: 0 16px;
+  border: 1px solid var(--border); border-radius: var(--rad);
+  background: var(--bg-panel); overflow: hidden;
+}
+.md summary {
+  cursor: pointer; user-select: none; list-style: none;
+  margin: 0 -16px; padding: 10px 16px;
+  font-weight: 600; font-size: .92em; color: var(--accent-2);
+  display: flex; align-items: center; gap: 9px;
+  transition: background .12s;
+}
+.md summary::-webkit-details-marker { display: none; }
+.md summary::before {
+  content: ""; flex: none;
+  border-style: solid; border-width: 4.5px 0 4.5px 7px;
+  border-color: transparent transparent transparent currentColor;
+  transition: transform .16s ease;
+}
+.md details[open] summary::before { transform: rotate(90deg); }
+.md summary:hover { background: rgba(255, 184, 107, .07); }
+.md details[open] summary { border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.md details > :last-child { margin-bottom: 14px; }
+.md hr { border: none; height: 1px; margin: 2.2em 0; background: linear-gradient(90deg, transparent, var(--border-lt), transparent); }
+.md img { max-width: 100%; border-radius: 8px; }
+.md code:not(pre code) {
+  font-family: var(--mono); font-size: .86em;
+  background: rgba(255, 184, 107, .1); color: var(--accent-2);
+  border: 1px solid rgba(255, 184, 107, .18);
+  padding: .14em .42em; border-radius: 6px;
+}
+.md li.task { list-style: none; margin-left: -1.45em; }
+.md .task-cb { accent-color: var(--accent-deep); width: 14px; height: 14px; margin-right: 7px; vertical-align: -2px; }
+.md li.task.done > *, .md li.task.done { color: var(--text-mute); }
+.md li.task.done { text-decoration: line-through; text-decoration-color: rgba(151, 163, 180, .4); }
+.md .tw { overflow-x: auto; margin: 1.1em 0; border: 1px solid var(--border); border-radius: var(--rad); }
+.md table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.md th, .md td { padding: 9px 15px; border-bottom: 1px solid var(--border); text-align: left; }
+.md th { background: var(--bg-elev); font-weight: 650; font-size: 12.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-dim); white-space: nowrap; }
+.md tr:last-child td { border-bottom: none; }
+.md tbody tr:hover { background: rgba(255, 255, 255, .025); }
+
+/* code blocks */
+.md .cb {
+  margin: 1.15em 0; border: 1px solid var(--border);
+  border-radius: var(--rad); overflow: hidden;
+  background: #0d1117;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .3);
+}
+.cb-head {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-elev); border-bottom: 1px solid var(--border);
+  padding: 7px 12px;
+}
+.cb-dots { display: flex; gap: 6px; }
+.cb-dots i { width: 10px; height: 10px; border-radius: 50%; background: #2c3646; }
+.cb-dots i:nth-child(1) { background: #ff5f57cc; } .cb-dots i:nth-child(2) { background: #febc2ecc; } .cb-dots i:nth-child(3) { background: #28c840cc; }
+.cb-lang { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-mute); }
+.cb-flag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .5px;
+  color: var(--accent-2); border: 1px solid rgba(255, 184, 107, .35);
+  background: rgba(255, 184, 107, .08); padding: 1px 7px; border-radius: 20px;
+}
+.cb-copy {
+  margin-left: auto; background: none; border: 1px solid var(--border);
+  color: var(--text-mute); font-family: var(--mono); font-size: 11px;
+  padding: 3px 10px; border-radius: 7px; transition: all .15s;
+}
+.cb-copy:hover { color: var(--accent-2); border-color: var(--accent-deep); }
+.cb-copy.ok { color: #3fb950; border-color: #3fb95066; }
+.md .cb pre.hljs { background: transparent; margin: 0; padding: 15px 18px; overflow-x: auto; }
+.md .cb code { font-family: var(--mono); font-size: 13.2px; line-height: 1.75; }
+
+/* toast */
+#toast {
+  position: fixed; right: 22px; bottom: 22px; z-index: 50;
+  background: var(--bg-elev); border: 1px solid var(--border-lt);
+  color: var(--text-dim); font-size: 12.5px; font-family: var(--mono);
+  padding: 10px 16px; border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .45);
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  display: flex; align-items: center; gap: 8px;
+}
+#toast.show { opacity: 1; transform: none; }
+#toast .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+
+@media (max-width: 860px) {
+  #sidebar { position: fixed; z-index: 40; top: 47px; bottom: 0; left: 0; height: auto; box-shadow: 0 0 60px rgba(0,0,0,.5); }
+  #docwrap { padding: 24px 22px 70px; }
+  .hero h1 { font-size: 38px; }
+  #agentPanel { position: fixed; z-index: 35; inset: 47px 0 0 292px; width: auto; min-width: 0; height: auto; transition: left .22s ease, transform .2s ease; }
+  body.side-hidden #agentPanel { left: 0; }
+  body.agent-hidden #agentPanel { width: 100%; transform: translateX(100%); }
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+</svg>
+
+<aside id="sidebar">
+  <div class="side-head">
+    <div class="logo">Rs</div>
+    <div class="brand"><b>Rust From Zero</b><span>course viewer</span></div>
+  </div>
+  <div class="search">
+    <svg class="ic mag" style="width:14px;height:14px"><use href="#i-search"/></svg>
+    <input id="filter" type="text" placeholder="Filter files…" autocomplete="off" spellcheck="false">
+    <kbd>/</kbd>
+  </div>
+  <nav id="tree"></nav>
+  <div class="side-foot">
+    <span class="dot"></span><span id="stat">scanning…</span>
+    <div class="spacer"></div>
+    <button id="rescan" title="Re-scan project for markdown files"><svg class="ic"><use href="#i-refresh"/></svg>rescan</button>
+  </div>
+</aside>
+
+<main id="main">
+  <header id="topbar">
+    <button class="tb-btn" id="toggleSide" title="Show / hide sidebar (Ctrl+B)"><svg class="ic"><use href="#i-side"/></svg></button>
+    <span class="tb-brand">Rust From Zero</span>
+    <div id="tabbar" role="tablist"></div>
+    <button class="tb-btn" id="toggleAgent" title="Show / hide AI agent (Ctrl+J)"><svg class="ic"><use href="#i-terminal"/></svg></button>
+  </header>
+  <div id="content">
+    <div id="welcome">
+      <div class="hero">
+        <div class="hero-badge"><span class="dot"></span>live · auto-discovered from disk</div>
+        <h1>Rust <span class="grad">From Zero</span></h1>
+        <p class="hero-sub">Every markdown chapter in this course, rendered and kept in sync. Drop a new <code>.md</code> file anywhere — it appears here on its own.</p>
+        <div class="hero-stats" id="heroStats"></div>
+        <div class="hero-hints">
+          <span><kbd>/</kbd> filter files</span>
+          <span><kbd>Ctrl</kbd> <kbd>B</kbd> toggle sidebar</span>
+          <span><kbd>mid-click</kbd> close tab</span>
+        </div>
+      </div>
+    </div>
+    <div id="docwrap" hidden>
+      <header id="dochead">
+        <div class="crumbs" id="crumbs"></div>
+        <div class="meta" id="docmeta"></div>
+      </header>
+      <article id="view" class="md"></article>
+    </div>
+  </div>
+</main>
+
+<aside id="agentPanel" aria-label="AI agent terminal">
+  <header class="agent-head">
+    <svg class="ic" style="color:var(--accent-2)"><use href="#i-terminal"/></svg>
+    <select class="agent-select" id="agentSelect" title="Choose agent" aria-label="Choose agent"></select>
+    <span class="agent-status" id="agentStatus"><span class="dot"></span><span>starting</span></span>
+    <span class="agent-spacer"></span>
+    <button class="agent-action" id="restartAgent" title="Restart agent"><svg class="ic"><use href="#i-refresh"/></svg></button>
+    <button class="agent-action" id="hideAgent" title="Hide agent"><svg class="ic"><use href="#i-x"/></svg></button>
+  </header>
+  <div id="terminal"></div>
+</aside>
+
+<div id="toast"><span class="dot"></span><span id="toastMsg"></span></div>
+
+<script src="/vendor/markdown-it.min.js"></script>
+<script src="/vendor/highlight.min.js"></script>
+<script src="/vendor/xterm.js"></script>
+<script>
+"use strict";
+/* ================= helpers ================= */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const icon = n => `<svg class="ic"><use href="#i-${n}"/></svg>`;
+const GROUP_ICON = { lessons: "book", notes: "note", docs: "folder", root: "box" };
+
+function toast(msg) {
+  const t = $("#toast");
+  $("#toastMsg").textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+/* ================= markdown ================= */
+const md = window.markdownit({ html: true, linkify: true, breaks: false });
+
+md.renderer.rules.fence = (tokens, idx) => {
+  const t = tokens[idx];
+  const parts = (t.info || "").trim() ? t.info.trim().split(/[,\s]+/) : [];
+  const lang = parts[0] || "text";
+  const flags = parts.slice(1);
+  let code;
+  try {
+    code = window.hljs && hljs.getLanguage(lang)
+      ? hljs.highlight(t.content, { language: lang, ignoreIllegals: true }).value
+      : esc(t.content);
+  } catch (_) { code = esc(t.content); }
+  const flagHtml = flags.map(f => `<span class="cb-flag">${esc(f)}</span>`).join("");
+  return `<div class="cb"><div class="cb-head"><span class="cb-dots"><i></i><i></i><i></i></span>`
+       + `<span class="cb-lang">${esc(lang)}</span>${flagHtml}`
+       + `<button class="cb-copy" type="button">copy</button></div>`
+       + `<pre class="hljs"><code>${code}</code></pre></div>`;
+};
+
+let slugUsed = new Set();
+md.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
+  const inline = tokens[idx + 1];
+  if (inline && inline.type === "inline") {
+    const base = inline.content.toLowerCase().trim()
+      .replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s+/g, "-");
+    if (base) {
+      let id = base, n = 2;
+      while (slugUsed.has(id)) id = `${base}-${n++}`;
+      slugUsed.add(id);
+      tokens[idx].attrSet("id", id);
+    }
+  }
+  return self.renderToken(tokens, idx, options);
+};
+
+function renderMarkdown(text) {
+  slugUsed = new Set();
+  return md.render(text)
+    .replace(/<li>(<p>)?\[ \]\s*/g, '<li class="task">$1<input class="task-cb" type="checkbox" disabled>')
+    .replace(/<li>(<p>)?\[x\]\s*/gi, '<li class="task done">$1<input class="task-cb" type="checkbox" checked disabled>')
+    .replace(/<table>/g, '<div class="tw"><table>')
+    .replace(/<\/table>/g, "</table></div>");
+}
+
+/* ================= state ================= */
+const state = {
+  groups: [], files: new Map(), sig: "",
+  tabs: [], active: null,
+  collapsed: new Set(), filter: "",
+};
+const save = () => localStorage.setItem("rv.state", JSON.stringify({ tabs: state.tabs.map(t => t.path), active: state.active }));
+const load = () => { try { return JSON.parse(localStorage.getItem("rv.state")) || {}; } catch (_) { return {}; } };
+
+function prettyName(file) {
+  let stem = file.name;
+  if (stem.toLowerCase() === "readme") {
+    const p = file.path.split("/");
+    if (p.length > 1) stem = p[p.length - 2];
+  }
+  const m = stem.match(/^(\d+)[-_](.+)$/);
+  if (m) return { badge: m[1], text: m[2].replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase()) };
+  return { badge: null, text: stem };
+}
+
+/* ================= data ================= */
+async function fetchFiles(silent) {
+  const r = await fetch("/api/files", { cache: "no-store" });
+  const data = await r.json();
+  const sig = JSON.stringify(data.groups.map(g => g.files.map(f => f.path + ":" + f.mtime)));
+  const changed = sig !== state.sig;
+  state.groups = data.groups;
+  state.files = new Map();
+  for (const g of data.groups) for (const f of g.files) state.files.set(f.path, f);
+  if (changed && state.sig && silent) reconcile();
+  state.sig = sig;
+  if (!silent || changed) { renderTree(); renderHero(); }
+  $("#stat").textContent = `${data.total} file${data.total === 1 ? "" : "s"} · live`;
+  return changed;
+}
+
+/* Remove tabs of deleted files; reload open ones that changed on disk. */
+function reconcile() {
+  const before = state.tabs.length;
+  state.tabs = state.tabs.filter(t => state.files.has(t.path));
+  const removed = before - state.tabs.length;
+  let reloaded = false;
+  for (const t of state.tabs) {
+    const f = state.files.get(t.path);
+    if (f && t.mtime !== undefined && f.mtime !== t.mtime) {
+      t.mtime = f.mtime;
+      if (t.path === state.active) { loadContent(t.path, true); reloaded = true; }
+    }
+  }
+  if (state.active && !state.files.has(state.active)) {
+    state.active = state.tabs.length ? state.tabs[state.tabs.length - 1].path : null;
+    if (state.active) loadContent(state.active); else showWelcome();
+  }
+  if (removed || reloaded) toast(removed ? `${removed} tab${removed > 1 ? "s" : ""} closed — file removed` : "reloaded — file changed on disk");
+  else toast("file index updated");
+  renderTabs(); renderTree(); renderHero(); save();
+}
+
+/* ================= tree ================= */
+function renderTree() {
+  const tree = $("#tree");
+  const q = state.filter.trim().toLowerCase();
+  tree.innerHTML = "";
+  let shown = 0;
+  for (const g of state.groups) {
+    const files = g.files.filter(f => !q || (f.path + " " + f.title).toLowerCase().includes(q));
+    if (!files.length) continue;
+    shown += files.length;
+    const det = document.createElement("details");
+    det.className = "grp";
+    det.open = q ? true : !state.collapsed.has(g.key);
+    det.dataset.key = g.key;
+    det.addEventListener("toggle", () => {
+      if (det.open) state.collapsed.delete(g.key); else state.collapsed.add(g.key);
+    });
+    const sum = document.createElement("summary");
+    sum.innerHTML = `${icon("chev").replace('class="ic"', 'class="ic chev"')}${icon(GROUP_ICON[g.key] || "folder")}<span>${esc(g.label)}</span><span class="cnt">${files.length}</span>`;
+    det.appendChild(sum);
+    for (const f of files) {
+      const p = prettyName(f);
+      const row = document.createElement("div");
+      row.className = "file" + (f.path === state.active ? " active" : "");
+      row.title = f.path;
+      const depth = f.path.split("/").length - (g.key === "root" ? 1 : 2);
+      const sub = depth > 0 ? f.path.split("/").slice(1, -1).join("/") : f.title;
+      row.innerHTML =
+        (p.badge ? `<span class="num">${esc(p.badge)}</span>` : `<span class="fic">${icon("file")}</span>`) +
+        `<span class="ftxt"><span class="fname">${esc(p.text)}</span>` +
+        (sub ? `<span class="fsub">${esc(sub)}</span>` : "") + `</span>`;
+      row.addEventListener("click", () => openFile(f.path));
+      det.appendChild(row);
+    }
+    tree.appendChild(det);
+  }
+  if (!shown) tree.innerHTML = `<div class="empty">no markdown files match</div>`;
+}
+
+/* ================= tabs ================= */
+function renderTabs() {
+  const bar = $("#tabbar");
+  bar.innerHTML = "";
+  for (const t of state.tabs) {
+    const f = state.files.get(t.path);
+    const label = f ? prettyName(f).text : t.path.split("/").pop();
+    const el = document.createElement("div");
+    el.className = "tab" + (t.path === state.active ? " active" : "");
+    el.setAttribute("role", "tab");
+    el.title = t.path;
+    el.innerHTML = `<span class="tlabel">${esc(label)}</span><button class="tx" title="Close">×</button>`;
+    el.addEventListener("click", e => { if (!e.target.closest(".tx")) activate(t.path); });
+    el.addEventListener("auxclick", e => { if (e.button === 1) closeTab(t.path); });
+    el.querySelector(".tx").addEventListener("click", () => closeTab(t.path));
+    bar.appendChild(el);
+  }
+}
+
+function closeTab(path) {
+  const i = state.tabs.findIndex(t => t.path === path);
+  if (i < 0) return;
+  state.tabs.splice(i, 1);
+  if (state.active === path) {
+    const next = state.tabs[Math.min(i, state.tabs.length - 1)];
+    state.active = next ? next.path : null;
+    if (state.active) activate(state.active); else showWelcome();
+  }
+  renderTabs(); save();
+}
+
+function showWelcome() {
+  $("#docwrap").hidden = true;
+  $("#welcome").style.display = "";
+  renderTree(); renderHero();
+  syncAgentContext(null);
+  reportView();
+}
+
+/* ================= content ================= */
+async function openFile(path) {
+  if (!state.tabs.some(t => t.path === path)) {
+    const f = state.files.get(path);
+    state.tabs.push({ path, mtime: f ? f.mtime : undefined });
+  }
+  if (window.innerWidth <= 860 && !document.body.classList.contains("side-hidden")) toggleSidebar();
+  activate(path);
+}
+
+async function activate(path) {
+  state.active = path;
+  renderTabs(); renderTree(); save();
+  syncAgentContext(path);
+  await loadContent(path);
+}
+
+async function loadContent(path, preserveScroll) {
+  const content = $("#content");
+  const st = preserveScroll ? content.scrollTop : 0;
+  let text;
+  try {
+    const r = await fetch("/api/file?path=" + encodeURIComponent(path), { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    text = await r.text();
+  } catch (e) {
+    toast("failed to load " + path);
+    return;
+  }
+  const f = state.files.get(path);
+  const t = state.tabs.find(t => t.path === path);
+  if (t && f) t.mtime = f.mtime;
+
+  $("#welcome").style.display = "none";
+  $("#docwrap").hidden = false;
+  $("#view").innerHTML = renderMarkdown(text);
+
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.round(words / 200));
+  const updated = f ? new Date(f.mtime * 1000).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+  const crumbs = path.split("/");
+  $("#crumbs").innerHTML = crumbs.map((c, i) =>
+    i === crumbs.length - 1 ? `<b>${esc(c)}</b>` : `<span>${esc(c)}</span><span style="opacity:.5">/</span>`
+  ).join("");
+  $("#docmeta").innerHTML = `<span>${words.toLocaleString()} words</span><span>~${mins} min</span><span>${esc(updated)}</span>`;
+
+  content.scrollTop = preserveScroll ? st : 0;
+  reportView();
+}
+
+/* ============ view tracking (feeds the agent's get_current_view MCP tool) ============ */
+let viewTimer = null;
+function reportView() {
+  const content = $("#content");
+  let heading = null;
+  if (state.active) {
+    const top = content.getBoundingClientRect().top;
+    for (const h of $("#view").querySelectorAll("h1, h2, h3")) {
+      if (h.getBoundingClientRect().top <= top + 80) heading = h.textContent;
+      else break;
+    }
+  }
+  const max = content.scrollHeight - content.clientHeight;
+  fetch("/api/view", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      document: state.active,
+      heading,
+      scrollPercent: max > 0 ? Math.round((content.scrollTop / max) * 100) : 100,
+    }),
+    keepalive: true,
+  }).catch(() => {});
+}
+$("#content").addEventListener("scroll", () => {
+  clearTimeout(viewTimer);
+  viewTimer = setTimeout(reportView, 250);
+});
+
+/* ================= welcome hero ================= */
+function renderHero() {
+  if (state.active) return;
+  const box = $("#heroStats");
+  box.innerHTML = "";
+  for (const g of state.groups) {
+    const card = document.createElement("div");
+    card.className = "stat";
+    card.innerHTML = `<b>${g.files.length}</b><span>${esc(g.label)}</span>`;
+    card.title = "Open first file in " + g.label;
+    card.addEventListener("click", () => g.files[0] && openFile(g.files[0].path));
+    box.appendChild(card);
+  }
+}
+
+/* ================= events ================= */
+$("#view").addEventListener("click", async e => {
+  const btn = e.target.closest(".cb-copy");
+  if (!btn) return;
+  const code = btn.closest(".cb").querySelector("code").innerText;
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(code);
+    else {
+      const ta = document.createElement("textarea");
+      ta.value = code; ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+    }
+    btn.textContent = "copied"; btn.classList.add("ok");
+    setTimeout(() => { btn.textContent = "copy"; btn.classList.remove("ok"); }, 1300);
+  } catch (_) { toast("copy failed"); }
+});
+
+$("#filter").addEventListener("input", e => { state.filter = e.target.value; renderTree(); });
+$("#rescan").addEventListener("click", async () => { await fetchFiles(false); toast("re-scanned project"); });
+function toggleSidebar() {
+  document.body.classList.toggle("side-hidden");
+  $("#toggleSide").classList.toggle("off", document.body.classList.contains("side-hidden"));
+}
+$("#toggleSide").addEventListener("click", toggleSidebar);
+
+/* ================= agent terminal ================= */
+const terminal = new Terminal({
+  cursorBlink: true,
+  convertEol: false,
+  fontFamily: 'ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace',
+  fontSize: 13,
+  lineHeight: 1.18,
+  scrollback: 5000,
+  theme: {
+    background: "#090b10", foreground: "#e4e9f1", cursor: "#ff7a3c",
+    selectionBackground: "#ff7a3c55", black: "#0a0c11", red: "#f85149",
+    green: "#3fb950", yellow: "#d29922", blue: "#58a6ff", magenta: "#bc8cff",
+    cyan: "#39c5cf", white: "#e4e9f1", brightBlack: "#5f6b7d"
+  }
+});
+terminal.open($("#terminal"));
+
+const agent = { id: null, offset: 0, generation: 0, resizeTimer: null, decoder: new TextDecoder(), selected: null };
+function agentStatus(kind, label) {
+  const el = $("#agentStatus");
+  el.className = "agent-status " + kind;
+  el.lastElementChild.textContent = label;
+}
+function terminalSize() {
+  const element = terminal.element;
+  const measure = element && element.querySelector(".xterm-char-measure-element");
+  const viewport = element && element.querySelector(".xterm-viewport");
+  const cell = measure && measure.getBoundingClientRect();
+  const fallback = terminal._core && terminal._core._renderService.dimensions.css.cell;
+  const cellWidth = cell && cell.width > 0 ? cell.width : fallback && fallback.width;
+  const cellHeight = cell && cell.height > 0 ? cell.height : fallback && fallback.height;
+  if (!element || !cellWidth || !cellHeight) return { cols: terminal.cols, rows: terminal.rows };
+  const scrollbarWidth = viewport ? Math.max(0, viewport.offsetWidth - viewport.clientWidth) : 0;
+  return {
+    cols: Math.max(20, Math.floor((element.clientWidth - scrollbarWidth) / cellWidth)),
+    rows: Math.max(5, Math.floor(element.clientHeight / cellHeight))
+  };
+}
+function fitTerminal(notify = true) {
+  if (document.body.classList.contains("agent-hidden")) return;
+  const size = terminalSize();
+  if (size.cols === terminal.cols && size.rows === terminal.rows) return;
+  terminal.resize(size.cols, size.rows);
+  if (notify && agent.id) {
+    clearTimeout(agent.resizeTimer);
+    agent.resizeTimer = setTimeout(() => apiPost("/api/agent/resize", { id: agent.id, ...size }).catch(() => {}), 100);
+  }
+}
+async function apiPost(url, body) {
+  const response = await fetch(url, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  return data;
+}
+function decodeTerminalData(text) {
+  const bytes = Uint8Array.from(text, ch => ch.charCodeAt(0));
+  return agent.decoder.decode(bytes, { stream: true });
+}
+async function pollAgent(generation) {
+  while (agent.id && generation === agent.generation) {
+    try {
+      const response = await fetch(`/api/agent/output?id=${encodeURIComponent(agent.id)}&offset=${agent.offset}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      if (data.baseOffset > agent.offset) terminal.write("\r\n\x1b[33m[older terminal output was discarded]\x1b[0m\r\n");
+      if (data.data) terminal.write(decodeTerminalData(data.data));
+      agent.offset = data.offset;
+      if (data.exited) {
+        agentStatus("dead", `exited ${data.exitCode ?? ""}`.trim());
+        terminal.write(`\r\n\x1b[31m[agent exited${data.exitCode == null ? "" : ` with code ${data.exitCode}`} - use restart to open a new session]\x1b[0m\r\n`);
+        return;
+      }
+    } catch (error) {
+      agentStatus("dead", "disconnected");
+      terminal.write(`\r\n\x1b[31m[connection lost: ${error.message}]\x1b[0m\r\n`);
+      return;
+    }
+  }
+}
+function showNoAgent(hint) {
+  agentStatus("dead", "no agent");
+  terminal.write("\x1b[33mNo supported AI agent CLI was found on this machine.\x1b[0m\r\n\r\n");
+  terminal.write("This panel launches a local agent CLI (Kimi, Codex, Claude, …) that can read the\r\n");
+  terminal.write("course and the section you are viewing. To enable it:\r\n\r\n");
+  terminal.write("  1. Install an agent CLI — Kimi Code is the zero-config option for this course:\r\n");
+  terminal.write("     https://www.kimi.com/code\r\n");
+  terminal.write("  2. Log in with the CLI's own login command.\r\n");
+  terminal.write("  3. Restart the viewer (python3 viewer/serve.py) and reopen this page.\r\n\r\n");
+  terminal.write("Full setup guide: docs/agent-integration.md\r\n");
+  if (hint) terminal.write("\r\n\x1b[2m" + hint + "\x1b[0m\r\n");
+}
+async function startAgent() {
+  const oldId = agent.id;
+  agent.id = null;
+  agent.generation += 1;
+  agent.decoder = new TextDecoder();
+  if (oldId) fetch(`/api/agent/session?id=${encodeURIComponent(oldId)}`, { method: "DELETE" }).catch(() => {});
+  terminal.reset();
+  if (!agent.selected) { showNoAgent(agent.hint); return; }
+  agentStatus("", "starting");
+  fitTerminal(false);
+  try {
+    const data = await apiPost("/api/agent/session", { ...terminalSize(), document: state.active, agent: agent.selected });
+    agent.id = data.id;
+    agent.selected = data.agent;
+    agent.offset = 0;
+    $("#agentSelect").value = data.agent;
+    localStorage.setItem("rv.agent", data.agent);
+    agentStatus("live", "connected");
+    terminal.focus();
+    pollAgent(agent.generation);
+  } catch (error) {
+    agentStatus("dead", "failed");
+    terminal.write(`\x1b[31mUnable to start agent: ${error.message}\x1b[0m\r\n`);
+    terminal.write(`\x1b[2mSetup guide: docs/agent-integration.md\x1b[0m\r\n`);
+  }
+}
+function syncAgentContext(documentPath) {
+  if (!agent.id) return;
+  apiPost("/api/agent/context", { id: agent.id, document: documentPath }).catch(error => toast(error.message));
+}
+terminal.onData(data => {
+  if (agent.id) apiPost("/api/agent/input", { id: agent.id, data }).catch(error => toast(error.message));
+});
+function toggleAgent(forceHidden) {
+  document.body.classList.toggle("agent-hidden", forceHidden ?? !document.body.classList.contains("agent-hidden"));
+  $("#toggleAgent").classList.toggle("off", !document.body.classList.contains("agent-hidden"));
+  setTimeout(() => { fitTerminal(); if (!document.body.classList.contains("agent-hidden")) terminal.focus(); }, 220);
+}
+$("#toggleAgent").addEventListener("click", () => toggleAgent());
+$("#hideAgent").addEventListener("click", () => toggleAgent(true));
+$("#restartAgent").addEventListener("click", startAgent);
+$("#agentSelect").addEventListener("change", event => {
+  agent.selected = event.target.value;
+  localStorage.setItem("rv.agent", agent.selected);
+  startAgent();
+});
+new ResizeObserver(() => fitTerminal()).observe($("#terminal"));
+window.addEventListener("pagehide", () => {
+  if (agent.id) fetch(`/api/agent/session?id=${encodeURIComponent(agent.id)}`, { method: "DELETE", keepalive: true }).catch(() => {});
+});
+
+/* Reader zoom: Ctrl+wheel / Ctrl+- / Ctrl+= scales only the article.
+   Sidebar and top bar keep their size and stay pinned to the screen edges. */
+const Z_KEY = "rv.zoom";
+let readerZoom = parseFloat(localStorage.getItem(Z_KEY)) || 1;
+function applyZoom() {
+  readerZoom = Math.min(1.5, Math.max(0.8, readerZoom));
+  document.documentElement.style.setProperty("--reader-zoom", readerZoom);
+  localStorage.setItem(Z_KEY, String(readerZoom));
+}
+applyZoom();
+function zoomStep(dir) {
+  readerZoom = Math.round((readerZoom + dir * 0.05) * 100) / 100;
+  applyZoom();
+  toast(`reader zoom ${Math.round(readerZoom * 100)}%`);
+}
+let wheelAcc = 0;
+window.addEventListener("wheel", e => {
+  if (!e.ctrlKey) return;          // plain scroll keeps scrolling
+  e.preventDefault();              // stop the browser's global zoom
+  wheelAcc += e.deltaY;
+  if (Math.abs(wheelAcc) >= 40) { zoomStep(wheelAcc < 0 ? 1 : -1); wheelAcc = 0; }
+}, { passive: false });
+
+document.addEventListener("keydown", e => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  if (e.ctrlKey || e.metaKey) {
+    const k = e.key;
+    if (k.toLowerCase() === "b") { e.preventDefault(); toggleSidebar(); }
+    else if (k.toLowerCase() === "j") { e.preventDefault(); toggleAgent(); }
+    else if (k === "=" || k === "+") { e.preventDefault(); zoomStep(1); }
+    else if (k === "-" || k === "_") { e.preventDefault(); zoomStep(-1); }
+    else if (k === "0") { e.preventDefault(); readerZoom = 1; applyZoom(); toast("reader zoom 100%"); }
+    return;
+  }
+  if (e.key === "/" && !typing) { e.preventDefault(); $("#filter").focus(); }
+  else if (e.key === "Escape" && typing) { document.activeElement.blur(); }
+});
+
+/* ================= boot ================= */
+(async function boot() {
+  const [, agentResponse] = await Promise.all([fetchFiles(false), fetch("/api/agents", { cache: "no-store" })]);
+  const agentData = await agentResponse.json();
+  const select = $("#agentSelect");
+  agent.hint = agentData.hint || null;
+  if (agentData.agents.length) {
+    select.innerHTML = agentData.agents.map(item => `<option value="${esc(item.id)}">${esc(item.label)}</option>`).join("");
+    const savedAgent = localStorage.getItem("rv.agent");
+    agent.selected = agentData.agents.some(item => item.id === savedAgent) ? savedAgent : agentData.default;
+    select.value = agent.selected;
+  } else {
+    select.style.display = "none";
+    agent.selected = null;
+  }
+  const saved = load();
+  const tabs = (saved.tabs || []).filter(p => state.files.has(p));
+  state.tabs = tabs.map(p => ({ path: p, mtime: state.files.get(p).mtime }));
+  state.active = saved.active && state.files.has(saved.active) ? saved.active : null;
+  renderTabs();
+  if (state.active) activate(state.active); else showWelcome();
+  setInterval(() => { if (!document.hidden) fetchFiles(true).catch(() => {}); }, 4000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) fetchFiles(true).catch(() => {}); });
+  startAgent();
+})();
+</script>
+</body>
+</html>

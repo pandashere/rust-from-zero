@@ -1,0 +1,14 @@
+/target/
+/lessons/*/target/
+**/__pycache__/
+*.py[cod]
+*.swp
+*.swo
+.DS_Store
+/.agent-runs/
+/.kimi-code/local.toml
+/notes/local*
+.env
+.env.*
+!.env.example
+/*.rmeta

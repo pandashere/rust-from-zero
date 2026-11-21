@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt
+      - name: Check course structure
+        run: python3 tools/check_course.py
+      - name: Check Markdown links
+        run: python3 tools/check_markdown_links.py
+      - name: Test course checker
+        run: python3 -m unittest discover -s tools/tests -v
+      - name: Test viewer and agent integration
+        run: python3 -m unittest discover -s viewer/tests -v
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Compile all lesson targets
+        run: cargo check --workspace --all-targets
+      - name: Compile all behavior tests
+        run: cargo test --workspace --no-run
+      - name: Run strict Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Check public API documentation
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
